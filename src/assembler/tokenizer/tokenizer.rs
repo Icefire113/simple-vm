@@ -207,6 +207,8 @@ impl<'a> Tokenizer<'a> {
             "push_overflow" => Token::Keyword(Keyword::PushOverflowFlag),
             "clear_overflow" => Token::Keyword(Keyword::ClearOverflow),
             "exit" => Token::Keyword(Keyword::Exit),
+            "call" => Token::Keyword(Keyword::Call),
+            "ret" => Token::Keyword(Keyword::Ret),
 
             "true" => Token::Keyword(Keyword::True),
             "false" => Token::Keyword(Keyword::False),

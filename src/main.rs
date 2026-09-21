@@ -96,4 +96,47 @@ mod tests {
         let r = run_code(asm_test);
         assert_eq!(r, crate::vm::Value::Int(138));
     }
+
+    #[test]
+    fn call_stack_test() {
+        let test_asm = r"
+        # Same example from main
+
+:swap_dbg
+    dbg_stack
+    swap
+    dbg_stack
+    ret
+
+:main
+    push 2
+    push 5
+    addu
+    push 3
+    mulc
+    negu
+    push -4
+    jmp loc_2
+:loc_1
+    call swap_dbg
+    jmp ret_2
+
+:loc_2
+    jmp loc_1
+
+
+:ret_2
+    divc
+    push 10
+    mulc
+    push 1
+    addc
+    push 26
+    subu
+    exit
+# Should exit with Value::Int(-25)
+";
+        let r = run_code(test_asm);
+        assert_eq!(r, crate::vm::Value::Int(-25));
+    }
 }

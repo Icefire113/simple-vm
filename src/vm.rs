@@ -25,6 +25,9 @@ pub enum VMError {
 
     #[error("Mismatched operands")]
     MismatchedOperands,
+
+    #[error("Missing return address")]
+    MissingReturnAddress,
 }
 
 #[derive(Debug, Default)]
@@ -77,6 +80,7 @@ impl From<bool> for Value {
 pub struct VM {
     stack: Vec<Value>,
     program: Vec<VMInstruction>,
+    call_stack: Vec<usize>,
     pc: usize,
     error_flags: ErrorFlags,
 }
@@ -86,6 +90,7 @@ impl VM {
         Self {
             stack: Vec::new(),
             program: Vec::new(),
+            call_stack: Vec::new(),
             pc: 0,
             error_flags: Default::default(),
         }
@@ -96,6 +101,7 @@ impl VM {
     /// is at a different address
     pub fn load_program(&mut self, program: Vec<VMInstruction>, pc: usize) {
         self.stack.clear();
+        self.call_stack.clear();
         self.error_flags = Default::default();
         self.program = program;
         self.pc = pc;
@@ -347,6 +353,18 @@ impl VM {
                     }
                     VMInstruction::PushOverflowFlag => {
                         self.stack.push(self.error_flags.overflow.into())
+                    }
+                    VMInstruction::Call(addr) => {
+                        self.call_stack.push(self.pc + 1);
+                        self.pc = addr as usize;
+                        // skip pc increment
+                        return Ok(None);
+                    }
+                    VMInstruction::Return => {
+                        self.pc =
+                            self.call_stack.pop().ok_or(VMError::MissingReturnAddress)? as usize;
+                        // skip pc increment
+                        return Ok(None);
                     }
                 };
                 self.pc += 1;

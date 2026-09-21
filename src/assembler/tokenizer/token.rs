@@ -80,6 +80,8 @@ pub enum Keyword {
     ClearOverflow,
     PushDivisionByZeroFlag,
     PushOverflowFlag,
+    Call,
+    Ret,
 
     True,
     False,
@@ -126,6 +128,8 @@ impl Display for Keyword {
             Self::ClearOverflow => "clear_overflow",
             Self::PushDivisionByZeroFlag => "push_div_zero",
             Self::PushOverflowFlag => "push_overflow",
+            Self::Call => "call",
+            Self::Ret => "ret",
         };
         write!(f, "{s}")
     }

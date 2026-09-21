@@ -63,6 +63,7 @@ impl<'a> Parser<'a> {
                                             VMInstruction::JumpIfFalse(old_addr) => {
                                                 *old_addr = addr
                                             }
+                                            VMInstruction::Call(old_addr) => *old_addr = addr,
                                             _ => panic!(
                                                 "Internal error: stored fixup index is not a jump instruction"
                                             ),
@@ -85,7 +86,7 @@ impl<'a> Parser<'a> {
         }
 
         if !self.fixup_list.is_empty() {
-            return Err(ParseError::FixupListNotEmpty(
+            return Err(ParseError::UndefinedLabels(
                 self.fixup_list.into_keys().collect(),
             ));
         }
@@ -262,6 +263,24 @@ impl<'a> Parser<'a> {
                     Keyword::ClearOverflow => Ok(VMInstruction::ClearOverflow),
                     Keyword::PushDivisionByZeroFlag => Ok(VMInstruction::PushDivisionByZeroFlag),
                     Keyword::PushOverflowFlag => Ok(VMInstruction::PushOverflowFlag),
+                    Keyword::Call => match self.advance() {
+                        Some(Token::Identifier(loc)) => {
+                            match self.label_map.get(loc) {
+                                Some(addr) => Ok(VMInstruction::Call(*addr as u32)),
+                                None => {
+                                    self.fixup_list
+                                        .entry(loc.clone())
+                                        .or_insert(Vec::new())
+                                        .push(cur_instruction_idx);
+                                    // temp store an invalid address
+                                    Ok(VMInstruction::Call(-1i32 as u32))
+                                }
+                            }
+                        }
+                        None => Err(ParseError::UnexpectedEOF),
+                        _ => Err(IllegalToken(tok.clone(), self.pos)),
+                    },
+                    Keyword::Ret => Ok(VMInstruction::Return),
                     _ => Err(ParseError::IllegalToken(tok.clone(), self.pos)),
                 },
                 _ => unreachable!(),

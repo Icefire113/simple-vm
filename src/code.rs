@@ -98,6 +98,11 @@ pub enum VMInstruction {
     /// Pops a value from the stack and jumps to the given value if the value is false
     JumpIfFalse(u32),
 
+    /// Pushes PC + 1 onto the return stack, then jumps to the given address
+    Call(u32),
+    /// Pops a value from the return stack and jumps to that value
+    Return,
+
     // VM control stuffs
     /// Debug instruction, prints the current state of the stack to stderr
     DebugStack,

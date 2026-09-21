@@ -12,7 +12,7 @@ pub enum ParseError {
     LabelAlreadyDefined(String),
 
     #[error("Undefined label(s): {:?}", _0)]
-    FixupListNotEmpty(Vec<String>),
+    UndefinedLabels(Vec<String>),
 
     #[error("Illegal token {:?} at token position: {}", _0, _1)]
     IllegalToken(Token, usize),
