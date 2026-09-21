@@ -1,6 +1,9 @@
 use anyhow::Context;
 
-use crate::{code::VMInstruction, vm::VM};
+use crate::{
+    code::VMInstruction,
+    vm::{VM, Value},
+};
 
 mod code;
 mod vm;
@@ -8,32 +11,33 @@ mod vm;
 fn main() -> anyhow::Result<()> {
     let mut vm: VM = VM::new();
     vm.load_program(vec![
-        VMInstruction::PushImm(2),
-        VMInstruction::PushImm(5),
+        VMInstruction::PushImm(Value::Int(2)),
+        VMInstruction::PushImm(Value::Int(5)),
         VMInstruction::AddUnchecked, // 5 + 2 = 7
-        VMInstruction::PushImm(3),
+        VMInstruction::PushImm(Value::Int(3)),
         // 3 * 7 = 21
         VMInstruction::MulChecked,
         // -1 * 21 = -21
         VMInstruction::NegUnchecked,
-        VMInstruction::PushImm(-4),
+        VMInstruction::PushImm(Value::Int(-4)),
         VMInstruction::DebugStack,
         VMInstruction::Swap,
         VMInstruction::DebugStack,
         // -21 / -4 = 5
         VMInstruction::DivChecked,
-        VMInstruction::PushImm(10),
+        VMInstruction::PushImm(Value::Int(10)),
         // 5 * 10 = 50
         VMInstruction::MulUnchecked,
-        VMInstruction::PushImm(1),
+        VMInstruction::PushImm(Value::Int(1)),
         // 50 + 1 = 51
         VMInstruction::AddChecked,
-        VMInstruction::PushImm(26),
+        VMInstruction::PushImm(Value::Int(26)),
         // 26 - 51 = -25
         VMInstruction::Sub,
         VMInstruction::Exit,
     ]);
-    let r: i32 = vm.run().context("VM Run")?;
+    let r: Value = vm.run().context("VM Run")?;
     println!("VM result: {:?}", r);
+
     Ok(())
 }

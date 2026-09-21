@@ -1,3 +1,5 @@
+use crate::vm::Value;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VMInstruction {
     // Arithmetic stuffs
@@ -38,7 +40,7 @@ pub enum VMInstruction {
     /// Pops a value from the stack and discards it
     Pop,
     /// Push a 32bit signed integer immediate value onto the stack
-    PushImm(i32),
+    PushImm(Value),
 
     // control flow stuffs
     /// Pops a value from the stack and sets the program counter to that value
@@ -50,6 +52,11 @@ pub enum VMInstruction {
     JumpIfNotZero(u32),
     /// Pops a value from the stack and jumps to the given value if the value is zero
     JumpIfZero(u32),
+
+    /// Pops a value from the stack and jumps to the given value if the value is true
+    JumpIfTrue(u32),
+    /// Pops a value from the stack and jumps to the given value if the value is false
+    JumpIfFalse(u32),
 
     // VM control stuffs
     /// Debug instruction, prints the current state of the stack to stderr
