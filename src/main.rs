@@ -5,6 +5,7 @@ use crate::{
     vm::{VM, Value},
 };
 
+mod assembler;
 mod code;
 mod vm;
 
