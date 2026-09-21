@@ -21,18 +21,30 @@ pub enum VMInstruction {
     NegChecked,
 
     // Comparison stuffs
-    /// Pops 2 values from the stack and pushes their equality (1 or 0)
+    /// Pops 2 values from the stack and pushes their equality (true or false)
+    ///
+    /// Note that equality does also check that the types are the same, so `Value::Bool(true) == Value::Int(1)` is false
     Eq,
-    /// Pops 2 values from the stack and pushes their less than (1 or 0)
-    Lt,
-    /// Pops 2 values from the stack and pushes their greater than (1 or 0)
-    Gt,
-    /// Pops 2 values from the stack and pushes their greater than or equal (1 or 0)
-    GtEq,
-    /// Pops 2 values from the stack and pushes their less than or equal (1 or 0)
-    LtEq,
-    /// Pops 2 values from the stack and pushes their not equal (1 or 0)
+    /// Pops 2 values from the stack and pushes their not equal (true or false)
+    ///
+    /// Note that equality does also check that the types are the same, so `Value::Bool(true) == Value::Int(1)` is false
     Neq,
+    /// Pops 2 values from the stack and pushes their less than (true or false)
+    ///
+    /// Note that types are checked here, so a comparison between a `Value::Int` and a `Value::Bool` can raise an error
+    Lt,
+    /// Pops 2 values from the stack and pushes their greater than (true or false)
+    ///
+    /// Note that types are checked here, so a comparison between a `Value::Int` and a `Value::Bool` can raise an error
+    Gt,
+    /// Pops 2 values from the stack and pushes their greater than or equal (true or false)
+    ///
+    /// Note that types are checked here, so a comparison between a `Value::Int` and a `Value::Bool` can raise an error
+    GtEq,
+    /// Pops 2 values from the stack and pushes their less than or equal (true or false)
+    ///
+    /// Note that types are checked here, so a comparison between a `Value::Int` and a `Value::Bool` can raise an error
+    LtEq,
 
     // stack operations
     /// Pops the top two values from the stack, swaps them, then pushes them back

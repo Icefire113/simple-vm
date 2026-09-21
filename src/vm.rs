@@ -161,10 +161,10 @@ impl VM {
                         eprintln!("[VM] PC: {} | Stack Debug: {:?}", self.pc, self.stack);
                     }
                     VMInstruction::Swap => {
-                        let a: i32 = self.pop_checked_int()?;
-                        let b: i32 = self.pop_checked_int()?;
-                        self.stack.push(a.into());
-                        self.stack.push(b.into());
+                        let a = self.pop_checked()?;
+                        let b = self.pop_checked()?;
+                        self.stack.push(a);
+                        self.stack.push(b);
                     }
                     VMInstruction::Pop => {
                         self.stack.pop().ok_or(VMError::StackExhausted)?;
@@ -211,7 +211,7 @@ impl VM {
                     VMInstruction::Eq => {
                         let a = self.pop_checked()?;
                         let b = self.pop_checked()?;
-                        self.stack.push(if a == b { true } else { false }.into());
+                        self.stack.push((a == b).into());
                     }
                     VMInstruction::Lt => {
                         let a = self.pop_checked()?;
@@ -256,7 +256,7 @@ impl VM {
                     VMInstruction::Neq => {
                         let a = self.pop_checked()?;
                         let b = self.pop_checked()?;
-                        self.stack.push(if a != b { true } else { false }.into());
+                        self.stack.push((a != b).into());
                     }
                 };
                 self.pc += 1;
