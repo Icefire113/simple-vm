@@ -15,7 +15,7 @@ fn main() -> anyhow::Result<()> {
         // 3 * 7 = 21
         VMInstruction::MulChecked,
         // -1 * 21 = -21
-        VMInstruction::Neg,
+        VMInstruction::NegUnchecked,
         VMInstruction::PushImm(-4),
         VMInstruction::DebugStack,
         VMInstruction::Swap,
@@ -34,6 +34,6 @@ fn main() -> anyhow::Result<()> {
         VMInstruction::Exit,
     ]);
     let r: i32 = vm.run().context("VM Run")?;
-    println!("Result: {:?}", r);
+    println!("VM result: {:?}", r);
     Ok(())
 }
