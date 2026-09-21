@@ -1,10 +1,7 @@
 use anyhow::Context;
 
 use crate::{
-    assembler::{
-        parser::Parser,
-        tokenizer::{token::Token, tokenizer::Tokenizer},
-    },
+    assembler::{parser::Parser, tokenizer::tokenizer::Tokenizer},
     vm::VM,
 };
 
@@ -16,7 +13,7 @@ fn main() -> anyhow::Result<()> {
     let asm_path = std::env::args().nth(1).context("No source file given")?;
     let asm_text = std::fs::read_to_string(asm_path).context("Failed to read file")?;
 
-    let tokens: Vec<Token> = Tokenizer::new(&asm_text)
+    let tokens: Vec<assembler::tokenizer::token::Token> = Tokenizer::new(&asm_text)
         .tokenize()
         .context("Failed to tokenize")?;
 
@@ -33,14 +30,23 @@ fn main() -> anyhow::Result<()> {
 
 #[cfg(test)]
 mod tests {
+    use crate::vm::Value;
 
-    #[test]
-    fn test1() {
+    fn run_code(asm: &str) -> Value {
         use crate::assembler::{
             parser::Parser,
             tokenizer::{token::Token, tokenizer::Tokenizer},
         };
+        let tokens: Vec<Token> = Tokenizer::new(asm).tokenize().unwrap();
+        let parser = Parser::new(&tokens);
+        let (instructions, main_addr) = parser.parse().unwrap();
+        let mut vm = crate::vm::VM::new();
+        vm.load_program(instructions, main_addr);
+        vm.run().unwrap()
+    }
 
+    #[test]
+    fn test1() {
         let asm_test = r"
 :loc_2
     jmp loc_1
@@ -72,12 +78,22 @@ mod tests {
     jmp ret_2
 ";
 
-        let tokens: Vec<Token> = Tokenizer::new(asm_test).tokenize().unwrap();
-        let parser = Parser::new(&tokens);
-        let (instructions, main_addr) = parser.parse().unwrap();
-        let mut vm = crate::vm::VM::new();
-        vm.load_program(instructions, main_addr);
-        let r = vm.run().unwrap();
+        let r = run_code(asm_test);
         assert_eq!(r, crate::vm::Value::Int(-25));
+    }
+
+    #[test]
+    fn test2() {
+        let asm_test = r"
+        :main
+    push 10
+    push 32
+    shl 2        # 32 << 2 = 128
+    addu
+    exit         # exits with 138
+        ";
+
+        let r = run_code(asm_test);
+        assert_eq!(r, crate::vm::Value::Int(138));
     }
 }
