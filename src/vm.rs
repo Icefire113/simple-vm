@@ -17,6 +17,9 @@ pub enum VMError {
     #[error("Expected stack value to be an integer")]
     ExpectedInt,
 
+    #[error("Invalid shift amount")]
+    InvalidShiftAmount,
+
     #[error("Expected stack value to be a boolean")]
     ExpectedBool,
 
@@ -28,6 +31,18 @@ pub enum VMError {
 pub struct ErrorFlags {
     division_by_zero: bool,
     overflow: bool,
+}
+
+impl ErrorFlags {
+    /// Returns whether an arithmetic overflow has occurred since the flags were last cleared
+    pub fn overflow(&self) -> bool {
+        self.overflow
+    }
+
+    /// Returns whether a division by zero has been attempted since the flags were last cleared
+    pub fn division_by_zero(&self) -> bool {
+        self.division_by_zero
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -76,12 +91,17 @@ impl VM {
         }
     }
 
-    /// Loads a program into the virtual machine, overwriting any existing program
+    /// Loads a program into the virtual machine, overwriting any existing program and state
     pub fn load_program(&mut self, program: Vec<VMInstruction>) {
         self.stack.clear();
         self.error_flags = Default::default();
         self.program = program;
         self.pc = 0;
+    }
+
+    /// Returns the VM's error flags
+    pub fn error_flags(&self) -> &ErrorFlags {
+        &self.error_flags
     }
 
     /// Runs a single instruction, an `Err` return means that an error occurred when executing the instruction,
@@ -95,7 +115,11 @@ impl VM {
                     VMInstruction::AddUnchecked => {
                         let a: i32 = self.pop_checked_int()?;
                         let b: i32 = self.pop_checked_int()?;
-                        self.stack.push(a.wrapping_add(b).into());
+                        let (r, overflowed) = a.overflowing_add(b);
+                        if overflowed {
+                            self.error_flags.overflow = true;
+                        }
+                        self.stack.push(r.into());
                     }
                     VMInstruction::AddChecked => {
                         let a: i32 = self.pop_checked_int()?;
@@ -111,12 +135,31 @@ impl VM {
                     VMInstruction::Sub => {
                         let a: i32 = self.pop_checked_int()?;
                         let b: i32 = self.pop_checked_int()?;
-                        self.stack.push((a - b).into());
+                        let (r, overflowed) = a.overflowing_sub(b);
+                        if overflowed {
+                            self.error_flags.overflow = true;
+                        }
+                        self.stack.push(r.into());
+                    }
+                    VMInstruction::SubChecked => {
+                        let a: i32 = self.pop_checked_int()?;
+                        let b: i32 = self.pop_checked_int()?;
+                        match a.checked_sub(b) {
+                            Some(r) => self.stack.push(r.into()),
+                            None => {
+                                self.error_flags.overflow = true;
+                                return Err(VMError::Overflow);
+                            }
+                        }
                     }
                     VMInstruction::MulUnchecked => {
                         let a: i32 = self.pop_checked_int()?;
                         let b: i32 = self.pop_checked_int()?;
-                        self.stack.push(a.wrapping_mul(b).into());
+                        let (r, overflowed) = a.overflowing_mul(b);
+                        if overflowed {
+                            self.error_flags.overflow = true;
+                        }
+                        self.stack.push(r.into());
                     }
                     VMInstruction::MulChecked => {
                         let a: i32 = self.pop_checked_int()?;
@@ -141,15 +184,19 @@ impl VM {
                     }
                     VMInstruction::NegUnchecked => {
                         let a: i32 = self.pop_checked_int()?;
-                        self.stack.push(a.overflowing_neg().0.into());
+                        let (r, overflowed) = a.overflowing_neg();
+                        if overflowed {
+                            self.error_flags.overflow = true;
+                        }
+                        self.stack.push(r.into());
                     }
                     VMInstruction::NegChecked => {
                         let a: i32 = self.pop_checked_int()?;
                         match a.overflowing_neg() {
                             (r, false) => self.stack.push(r.into()),
-                            (r, true) => {
+                            (_, true) => {
                                 self.error_flags.overflow = true;
-                                self.stack.push(r.into());
+                                return Err(VMError::Overflow);
                             }
                         }
                     }
@@ -168,6 +215,11 @@ impl VM {
                     }
                     VMInstruction::Pop => {
                         self.stack.pop().ok_or(VMError::StackExhausted)?;
+                    }
+                    VMInstruction::Dup => {
+                        let a = self.pop_checked()?;
+                        self.stack.push(a);
+                        self.stack.push(a);
                     }
                     VMInstruction::PopJump => {
                         let a = self.pop_checked_int()?;
@@ -257,6 +309,33 @@ impl VM {
                         let a = self.pop_checked()?;
                         let b = self.pop_checked()?;
                         self.stack.push((a != b).into());
+                    }
+                    VMInstruction::ShiftL(n) => {
+                        let a = self.pop_checked_int()?;
+                        let r = a.checked_shl(n as u32).ok_or(VMError::InvalidShiftAmount)?;
+                        self.stack.push(r.into());
+                    }
+                    VMInstruction::ShiftR(n) => {
+                        let a = self.pop_checked_int()?;
+                        let r = a.checked_shr(n as u32).ok_or(VMError::InvalidShiftAmount)?;
+                        self.stack.push(r.into());
+                    }
+                    VMInstruction::RotL(n) => {
+                        let a = self.pop_checked_int()?;
+                        self.stack.push(a.rotate_left(n as u32).into());
+                    }
+                    VMInstruction::RotR(n) => {
+                        let a = self.pop_checked_int()?;
+                        self.stack.push(a.rotate_right(n as u32).into());
+                    }
+                    VMInstruction::ClearErrorFlags => self.error_flags = Default::default(),
+                    VMInstruction::ClearDivisionByZero => self.error_flags.division_by_zero = false,
+                    VMInstruction::ClearOverflow => self.error_flags.overflow = false,
+                    VMInstruction::PushDivisionByZeroFlag => {
+                        self.stack.push(self.error_flags.division_by_zero.into())
+                    }
+                    VMInstruction::PushOverflowFlag => {
+                        self.stack.push(self.error_flags.overflow.into())
                     }
                 };
                 self.pc += 1;
