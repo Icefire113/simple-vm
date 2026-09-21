@@ -117,7 +117,7 @@ operand stack before → after. "Checked" arithmetic acts as a runtime assert: o
 overflow it sets the overflow flag **and raises an error**, halting the VM.
 "Unchecked" arithmetic wraps and sets the overflow flag but keeps running, so a
 program can inspect flags afterward (`push_overflow`, `jnz ...`). Flags are
-sticky until cleared (see [Flags](#error-flags)).
+sticky until cleared (see [Error Flags and VM Control](#error-flags-and-vm-control)).
 
 ### Stack manipulation
 
@@ -135,17 +135,17 @@ Binary ops pop the top two values and push the result. For `op a b` forms the
 **top of stack is the right-hand operand**: `push x; push y; subu` computes
 `y - x`.
 
-| Mnemonic | Stack            | Effect                                  |
-|----------|------------------|-----------------------------------------|
-| `addu`   | `[a, b] → [a+b]` | Add, wraps on overflow, sets flag       |
-| `addc`   | `[a, b] → [a+b]` | Add, asserts no overflow                |
-| `subu`   | `[a, b] → [a-b]` | Subtract (`b - a`), wraps, sets flag    |
-| `subc`   | `[a, b] → [a-b]` | Subtract, asserts no overflow           |
-| `mulu`   | `[a, b] → [a*b]` | Multiply, wraps, sets flag              |
-| `mulc`   | `[a, b] → [a*b]` | Multiply, asserts no overflow           |
+| Mnemonic | Stack            | Effect                                               |
+|----------|------------------|------------------------------------------------------|
+| `addu`   | `[a, b] → [a+b]` | Add, wraps on overflow, sets flag                    |
+| `addc`   | `[a, b] → [a+b]` | Add, asserts no overflow                             |
+| `subu`   | `[a, b] → [a-b]` | Subtract (`b - a`), wraps, sets flag                 |
+| `subc`   | `[a, b] → [a-b]` | Subtract, asserts no overflow                        |
+| `mulu`   | `[a, b] → [a*b]` | Multiply, wraps, sets flag                           |
+| `mulc`   | `[a, b] → [a*b]` | Multiply, asserts no overflow                        |
 | `divc`   | `[a, b] → [a/b]` | Divide (`a / b`, truncating), `b = 0` → error + flag |
-| `negu`   | `[a] → [-a]`     | Negate, wraps (`i32::MIN` → itself), sets flag |
-| `negc`   | `[a] → [-a]`     | Negate, asserts no overflow             |
+| `negu`   | `[a] → [-a]`     | Negate, wraps (`i32::MIN` → itself), sets flag       |
+| `negc`   | `[a] → [-a]`     | Negate, asserts no overflow                          |
 
 ### Bitwise
 
@@ -153,12 +153,12 @@ Shift/rotate take the value from the stack; the **amount is an immediate
 operand**. Amounts >= 32 are errors for shifts; rotate amounts wrap modulo 32.
 Right shifts are arithmetic (sign-preserving).
 
-| Mnemonic  | Stack          | Effect                              |
-|-----------|----------------|-------------------------------------|
-| `shl n`   | `[a] → [a<<n]` | Shift left by immediate n (0..=31)  |
-| `shr n`   | `[a] → [a>>n]` | Arithmetic shift right              |
-| `rotl n`  | `[a] → [a rotl n]` | Rotate left, n mod 32           |
-| `rotr n`  | `[a] → [a rotr n]` | Rotate right, n mod 32          |
+| Mnemonic  | Stack              | Effect                              |
+|-----------|--------------------|-------------------------------------|
+| `shl n`   | `[a] → [a<<n]`     | Shift left by immediate n (0..=31)  |
+| `shr n`   | `[a] → [a>>n]`     | Arithmetic shift right              |
+| `rotl n`  | `[a] → [a rotl n]` | Rotate left, n mod 32               |
+| `rotr n`  | `[a] → [a rotr n]` | Rotate right, n mod 32              |
 
 ### Comparison
 
@@ -189,6 +189,38 @@ a boolean.
 | `jf lbl`   | `[b] → []`     | Jump if `b == false` (bool)             |
 | `exit`     | `[v] → []`     | Halt; popped value is the exit code     |
 
+### Subroutines
+
+The VM keeps a separate **return stack** (independent of the operand stack).
+`call` pushes the index of the instruction after the `call` onto the return
+stack, then jumps; `ret` pops the return stack and jumps there. Because the
+return stack is separate, subroutine arguments and results travel on the
+operand stack, and `ret` can never confuse a return address with data.
+
+| Mnemonic   | Return stack       | Effect                                        |
+|------------|--------------------|-----------------------------------------------|
+| `call lbl` | `[] → [ret_addr]`  | Push return address, jump to `lbl`            |
+| `ret`      | `[ret_addr] → []`  | Pop return address and jump to it             |
+
+```sasm
+:main
+    push 10
+    push 3
+    call divide_by_2
+    exit
+
+:divide_by_2
+    # operand stack on entry: [n] — top of stack is the argument
+    push 2
+    divc
+    ret
+```
+
+Conventions: whatever the subroutine leaves on the operand stack is its "return
+value"; anything else it pushes should be popped before `ret`. `ret` with an
+empty return stack is a runtime error (it means a broken program — `ret` without
+a matching `call`).
+
 A label defined at the very end of the program (with no instructions after it)
 resolves to one past the last instruction. Jumping there ends execution — this
 is currently a runtime error (`InvalidPCAddress`), so end-of-program jump
@@ -200,13 +232,13 @@ Flags (`overflow`, `division_by_zero`) are sticky: set when the corresponding
 condition occurs (checked *or* unchecked), cleared only by the instructions
 below or by loading a new program.
 
-| Mnemonic            | Stack        | Effect                                |
-|---------------------|--------------|---------------------------------------|
-| `clear_err`         | —            | Clear both flags                      |
-| `clear_div_zero`    | —            | Clear the division-by-zero flag       |
-| `clear_overflow`    | —            | Clear the overflow flag               |
-| `push_div_zero`     | `[] → [b]`   | Push division-by-zero flag as bool    |
-| `push_overflow`     | `[] → [b]`   | Push overflow flag as bool            |
+| Mnemonic            | Stack        | Effect                                 |
+|---------------------|--------------|----------------------------------------|
+| `clear_err`         | —            | Clear both flags                       |
+| `clear_div_zero`    | —            | Clear the division-by-zero flag        |
+| `clear_overflow`    | —            | Clear the overflow flag                |
+| `push_div_zero`     | `[] → [b]`   | Push division-by-zero flag as bool     |
+| `push_overflow`     | `[] → [b]`   | Push overflow flag as bool             |
 | `dbg_stack`         | —            | Print pc + stack to stderr (debug aid) |
 
 ## Idioms
@@ -225,7 +257,7 @@ addu
 
 - `push true` / `push false`: the `true`/`false` keywords are tokenized but not
   yet accepted by the parser.
-- No `call`/`ret`, no memory (`load`/`store`), no bitwise logic ops
-  (`and`/`or`/`xor`/`not`), no `mod`.
+- No memory (`load`/`store`), no bitwise logic ops (`and`/`or`/`xor`/`not`),
+  no `mod`.
 - Jump targets can also be raw integer literals (`jmp 3`), which skips label
   safety entirely — useful for tests, footguns otherwise.
