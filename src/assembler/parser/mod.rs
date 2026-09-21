@@ -30,8 +30,8 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// Consumes this parser and returns a list of instructions
-    pub fn parse(mut self) -> Result<Vec<VMInstruction>, ParseError> {
+    /// Consumes this parser and returns a list of instructions, as well as the address of the main label
+    pub fn parse(mut self) -> Result<(Vec<VMInstruction>, usize), ParseError> {
         let mut instructions: Vec<VMInstruction> = Vec::new();
         while let Some(&tok) = self.peek() {
             match tok {
@@ -90,10 +90,9 @@ impl<'a> Parser<'a> {
             ));
         }
 
-        if !self.label_map.contains_key("main") {
-            Err(ParseError::NoMainLabel)
-        } else {
-            Ok(instructions)
+        match self.label_map.get("main") {
+            Some(addr) => Ok((instructions, *addr)),
+            None => Err(ParseError::NoMainLabel),
         }
     }
 
@@ -128,10 +127,34 @@ impl<'a> Parser<'a> {
                     Keyword::Divc => Ok(VMInstruction::DivChecked),
                     Keyword::Negu => Ok(VMInstruction::NegUnchecked),
                     Keyword::Negc => Ok(VMInstruction::NegChecked),
-                    Keyword::Shl => todo!(),
-                    Keyword::Shr => todo!(),
-                    Keyword::Rotl => todo!(),
-                    Keyword::Rotr => todo!(),
+                    Keyword::Shl => match self.advance() {
+                        Some(Token::Literal(LiteralToken::Int(i))) => {
+                            Ok(VMInstruction::ShiftL(*i as u8))
+                        }
+                        Some(t) => Err(IllegalToken(t.clone(), self.pos)),
+                        None => Err(ParseError::UnexpectedEOF),
+                    },
+                    Keyword::Shr => match self.advance() {
+                        Some(Token::Literal(LiteralToken::Int(i))) => {
+                            Ok(VMInstruction::ShiftR(*i as u8))
+                        }
+                        Some(t) => Err(IllegalToken(t.clone(), self.pos)),
+                        None => Err(ParseError::UnexpectedEOF),
+                    },
+                    Keyword::Rotl => match self.advance() {
+                        Some(Token::Literal(LiteralToken::Int(i))) => {
+                            Ok(VMInstruction::RotL(*i as u8))
+                        }
+                        Some(t) => Err(IllegalToken(t.clone(), self.pos)),
+                        None => Err(ParseError::UnexpectedEOF),
+                    },
+                    Keyword::Rotr => match self.advance() {
+                        Some(Token::Literal(LiteralToken::Int(i))) => {
+                            Ok(VMInstruction::RotR(*i as u8))
+                        }
+                        Some(t) => Err(IllegalToken(t.clone(), self.pos)),
+                        None => Err(ParseError::UnexpectedEOF),
+                    },
                     Keyword::Eq => Ok(VMInstruction::Eq),
                     Keyword::Neq => Ok(VMInstruction::Neq),
                     Keyword::Lt => Ok(VMInstruction::Lt),

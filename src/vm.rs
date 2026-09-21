@@ -92,11 +92,13 @@ impl VM {
     }
 
     /// Loads a program into the virtual machine, overwriting any existing program and state
-    pub fn load_program(&mut self, program: Vec<VMInstruction>) {
+    /// requires a program counter start address, this should typically be 0, unless your main label
+    /// is at a different address
+    pub fn load_program(&mut self, program: Vec<VMInstruction>, pc: usize) {
         self.stack.clear();
         self.error_flags = Default::default();
         self.program = program;
-        self.pc = 0;
+        self.pc = pc;
     }
 
     /// Returns the VM's error flags
@@ -108,7 +110,11 @@ impl VM {
     /// and the `Ok(None)` return means that the program has not yet exited, and a `Ok(Some(x))` return means
     /// that the program has exited with exit code `x`
     pub fn single_step(&mut self) -> Result<Option<Value>, VMError> {
-        // eprintln!("[VM] PC: {} | Instr: {:?}", self.pc, self.program[self.pc]);
+        eprintln!(
+            "[VM] PC: {} | Instr: {:?}",
+            self.pc,
+            self.program.get(self.pc)
+        );
         match self.program.get(self.pc) {
             Some(&value) => {
                 match value {

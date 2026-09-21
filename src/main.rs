@@ -18,10 +18,10 @@ fn main() -> anyhow::Result<()> {
         .context("Failed to tokenize")?;
 
     let parser = Parser::new(&tokens);
-    let instructions = parser.parse().context("Failed to parse")?;
+    let (instructions, main_addr) = parser.parse().context("Failed to parse")?;
 
     let mut vm = VM::new();
-    vm.load_program(instructions);
+    vm.load_program(instructions, main_addr);
     let r = vm.run().context("Failed to run")?;
     println!("Result: {:?}", r);
 
