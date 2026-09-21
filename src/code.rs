@@ -8,7 +8,7 @@ pub enum VMInstruction {
     /// Pops 2 values from the stack and pushes their sum, acting as a runtime assert; raises an error and sets ErrorFlags.overflow if it overflows
     AddChecked,
     /// Pops 2 values from the stack and pushes their difference, wrapping on overflow and setting ErrorFlags.overflow if it occurs
-    Sub,
+    SubUnchecked,
     /// Pops 2 values from the stack and pushes their difference, acting as a runtime assert; raises an error and sets ErrorFlags.overflow if it overflows
     SubChecked,
     /// Pops 2 values from the stack and pushes their product, acting as a runtime assert; raises an error and sets ErrorFlags.overflow if it overflows

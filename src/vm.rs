@@ -108,6 +108,7 @@ impl VM {
     /// and the `Ok(None)` return means that the program has not yet exited, and a `Ok(Some(x))` return means
     /// that the program has exited with exit code `x`
     pub fn single_step(&mut self) -> Result<Option<Value>, VMError> {
+        // eprintln!("[VM] PC: {} | Instr: {:?}", self.pc, self.program[self.pc]);
         match self.program.get(self.pc) {
             Some(&value) => {
                 match value {
@@ -132,7 +133,7 @@ impl VM {
                             }
                         }
                     }
-                    VMInstruction::Sub => {
+                    VMInstruction::SubUnchecked => {
                         let a: i32 = self.pop_checked_int()?;
                         let b: i32 = self.pop_checked_int()?;
                         let (r, overflowed) = a.overflowing_sub(b);
@@ -227,7 +228,11 @@ impl VM {
                         // skip pc increment
                         return Ok(None);
                     }
-                    VMInstruction::Jump(addr) => self.pc = addr as usize,
+                    VMInstruction::Jump(addr) => {
+                        self.pc = addr as usize;
+                        // skip pc increment
+                        return Ok(None);
+                    }
                     VMInstruction::JumpIfNotZero(addr) => {
                         let a = self.pop_checked_int()?;
                         if a != 0 {

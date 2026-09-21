@@ -1,0 +1,30 @@
+# Same example from main
+:main
+    push 2
+    push 5
+    addu
+    push 3
+    mulc
+    negu
+    push -4
+    jmp loc_2
+:loc_1
+    dbg_stack
+    swap
+    dbg_stack
+
+:ret_2
+    divc
+    push 10
+    mulc
+    push 1
+    addc
+    push 26
+    subu
+    exit
+# Should exit with Value::Int(-25)
+
+
+
+:loc_2
+    jmp loc_1

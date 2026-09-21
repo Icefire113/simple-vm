@@ -4,7 +4,7 @@ use crate::assembler::tokenizer::token::Token;
 
 /// Represents an error that occurs while tokenizing
 #[derive(Debug, Error)]
-pub enum SQLTokenizeError {
+pub enum SASMTokenizeError {
     #[error("Illegal token `{:?}` at: {}:{}", 0, 1, 2)]
     IllegalToken(Token, usize, usize),
 

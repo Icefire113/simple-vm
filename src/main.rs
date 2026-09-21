@@ -1,8 +1,8 @@
 use anyhow::Context;
 
 use crate::{
-    code::VMInstruction,
-    vm::{VM, Value},
+    assembler::{parser::Parser, tokenizer::tokenizer::Tokenizer},
+    vm::VM,
 };
 
 mod assembler;
@@ -10,35 +10,20 @@ mod code;
 mod vm;
 
 fn main() -> anyhow::Result<()> {
-    let mut vm: VM = VM::new();
-    vm.load_program(vec![
-        VMInstruction::PushImm(Value::Int(2)),
-        VMInstruction::PushImm(Value::Int(5)),
-        VMInstruction::AddUnchecked, // 5 + 2 = 7
-        VMInstruction::PushImm(Value::Int(3)),
-        // 3 * 7 = 21
-        VMInstruction::MulChecked,
-        // -1 * 21 = -21
-        VMInstruction::NegUnchecked,
-        VMInstruction::PushImm(Value::Int(-4)),
-        VMInstruction::DebugStack,
-        VMInstruction::Swap,
-        VMInstruction::DebugStack,
-        // -21 / -4 = 5
-        VMInstruction::DivChecked,
-        VMInstruction::PushImm(Value::Int(10)),
-        // 5 * 10 = 50
-        VMInstruction::MulUnchecked,
-        VMInstruction::PushImm(Value::Int(1)),
-        // 50 + 1 = 51
-        VMInstruction::AddChecked,
-        VMInstruction::PushImm(Value::Int(26)),
-        // 26 - 51 = -25
-        VMInstruction::Sub,
-        VMInstruction::Exit,
-    ]);
-    let r: Value = vm.run().context("VM Run")?;
-    println!("VM result: {:?}", r);
+    let asm_path = std::env::args().nth(1).context("No source file given")?;
+    let asm_text = std::fs::read_to_string(asm_path).context("Failed to read file")?;
+
+    let tokens: Vec<assembler::tokenizer::token::Token> = Tokenizer::new(&asm_text)
+        .tokenize()
+        .context("Failed to tokenize")?;
+
+    let parser = Parser::new(&tokens);
+    let instructions = parser.parse().context("Failed to parse")?;
+
+    let mut vm = VM::new();
+    vm.load_program(instructions);
+    let r = vm.run().context("Failed to run")?;
+    println!("Result: {:?}", r);
 
     Ok(())
 }
