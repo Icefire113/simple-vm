@@ -31,6 +31,9 @@ pub enum VMError {
 
     #[error("Invalid stack offset")]
     InvalidStackOffset,
+
+    #[error("Call stack limit exceeded")]
+    CallStackLimitExceeded,
 }
 
 #[derive(Debug, Default)]
@@ -80,12 +83,28 @@ impl From<bool> for Value {
 }
 
 #[derive(Debug)]
+pub struct VMConfig {
+    pub max_call_stack_size: usize,
+    pub dbg_print_pre_exec_instruction: bool,
+}
+
+impl Default for VMConfig {
+    fn default() -> Self {
+        Self {
+            max_call_stack_size: 1024,
+            dbg_print_pre_exec_instruction: false,
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct VM {
     stack: Vec<Value>,
     program: Vec<VMInstruction>,
     call_stack: Vec<usize>,
     pc: usize,
     error_flags: ErrorFlags,
+    config: VMConfig,
 }
 
 impl VM {
@@ -96,6 +115,7 @@ impl VM {
             call_stack: Vec::new(),
             pc: 0,
             error_flags: Default::default(),
+            config: Default::default(),
         }
     }
 
@@ -119,11 +139,14 @@ impl VM {
     /// and the `Ok(None)` return means that the program has not yet exited, and a `Ok(Some(x))` return means
     /// that the program has exited with exit code `x`
     pub fn single_step(&mut self) -> Result<Option<Value>, VMError> {
-        eprintln!(
-            "[VM] PC: {} | Instr: {:?}",
-            self.pc,
-            self.program.get(self.pc)
-        );
+        if self.config.dbg_print_pre_exec_instruction {
+            eprintln!(
+                "[VM] PC: {} | Instr: {:?}",
+                self.pc,
+                self.program.get(self.pc)
+            );
+        }
+
         match self.program.get(self.pc) {
             Some(&value) => {
                 match value {
@@ -358,6 +381,9 @@ impl VM {
                         self.stack.push(self.error_flags.overflow.into())
                     }
                     VMInstruction::Call(addr) => {
+                        if self.call_stack.len() >= self.config.max_call_stack_size {
+                            return Err(VMError::CallStackLimitExceeded);
+                        }
                         self.call_stack.push(self.pc + 1);
                         self.pc = addr as usize;
                         // skip pc increment
