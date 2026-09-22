@@ -1,0 +1,36 @@
+# fib.sasm
+# simple example program that computes the nth fibonacci number
+# author: icefire113
+# date: 2026-09-21
+
+
+# Main program entry point
+:main
+    push 18   # the fibonacci number to find
+    call fib
+    # return our number as the exit code
+    exit
+
+
+:fib
+# base case n <= 1
+    dup      # [n, n]
+    push 1   # [n, n, 1]
+    gteq     # [n, 1 >= n]
+    jf fib_recurse # [n]
+    ret
+
+:fib_recurse
+    dup       # [n, n]
+    push 1    # [n, n, 1]
+    move 1    # [n, 1, n]
+    subu      # [n, n - 1]
+    call fib  # [n, fib(n-1)]
+
+    move 1    # [fib(n-1), n]
+    push 2    # [fib(n-1), n, 2]
+    move 1    # [fib(n-1), 2, n]
+    subu      # [fib(n-1), n-2]
+    call fib  # [fib(n-1), fib(n-2)]
+    addu      # [fib(n)]
+    ret
