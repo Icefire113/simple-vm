@@ -109,6 +109,19 @@ impl<'a> Parser<'a> {
                         Some(Token::Literal(LiteralToken::Int(i))) => {
                             Ok(VMInstruction::PushImm(Value::Int(*i)))
                         }
+                        Some(Token::Keyword(Keyword::True)) => {
+                            Ok(VMInstruction::PushImm(Value::Bool(true)))
+                        }
+                        Some(Token::Keyword(Keyword::False)) => {
+                            Ok(VMInstruction::PushImm(Value::Bool(false)))
+                        }
+                        Some(Token::Operator(Operator::Plus)) => match self.advance() {
+                            Some(Token::Literal(LiteralToken::Int(i))) => {
+                                Ok(VMInstruction::PushImm(Value::Int(*i)))
+                            }
+                            Some(t) => Err(IllegalToken(t.clone(), self.pos)),
+                            None => Err(ParseError::UnexpectedEOF),
+                        },
                         Some(Token::Operator(Operator::Minus)) => match self.advance() {
                             Some(Token::Literal(LiteralToken::Int(i))) => {
                                 Ok(VMInstruction::PushImm(Value::Int(-*i)))

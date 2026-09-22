@@ -181,4 +181,16 @@ mod tests {
         let r = run_code(test_asm).unwrap();
         assert_eq!(r, crate::vm::Value::Int(0xF));
     }
+
+    #[test]
+    fn test_not() {
+        let test_asm = r"
+        :main
+            push true
+            not
+            exit
+        ";
+        let r = run_code(test_asm).unwrap();
+        assert_eq!(r, crate::vm::Value::Bool(false));
+    }
 }
