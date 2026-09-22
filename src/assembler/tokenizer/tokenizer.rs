@@ -213,6 +213,8 @@ impl<'a> Tokenizer<'a> {
             "and" => Token::Keyword(Keyword::BitAnd),
             "xor" => Token::Keyword(Keyword::BitXor),
             "not" => Token::Keyword(Keyword::BitNot),
+            "pick" => Token::Keyword(Keyword::Pick),
+            "move" => Token::Keyword(Keyword::Move),
 
             "true" => Token::Keyword(Keyword::True),
             "false" => Token::Keyword(Keyword::False),

@@ -193,4 +193,39 @@ mod tests {
         let r = run_code(test_asm).unwrap();
         assert_eq!(r, crate::vm::Value::Bool(false));
     }
+
+    #[test]
+    fn test_pick() {
+        let test_asm = r"
+        :main
+            push 10
+            push 20
+            push 30
+
+            # after those pushes, the stack will be [10, 20, 30]
+            #                              indexes:  2   1   0
+            pick 2
+            exit
+        ";
+        let r = run_code(test_asm).unwrap();
+        assert_eq!(r, crate::vm::Value::Int(10));
+    }
+
+        #[test]
+    fn test_move() {
+        let test_asm = r"
+        :main
+            push 10
+            push 20
+            push 30
+
+            # after those pushes, the stack will be [10, 20, 30]
+            #                              indexes:  2   1   0
+            move 1
+            # should be [10, 30, 20]
+            exit
+        ";
+        let r = run_code(test_asm).unwrap();
+        assert_eq!(r, crate::vm::Value::Int(20));
+    }
 }

@@ -86,6 +86,8 @@ pub enum Keyword {
     BitAnd,
     BitXor,
     BitNot,
+    Pick,
+    Move,
 
     True,
     False,
@@ -138,6 +140,8 @@ impl Display for Keyword {
             Self::BitAnd => "and",
             Self::BitXor => "xor",
             Self::BitNot => "not",
+            Self::Pick => "pick",
+            Self::Move => "move",
         };
         write!(f, "{s}")
     }

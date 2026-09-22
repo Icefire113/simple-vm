@@ -28,6 +28,9 @@ pub enum VMError {
 
     #[error("Missing return address")]
     MissingReturnAddress,
+
+    #[error("Invalid stack offset")]
+    InvalidStackOffset,
 }
 
 #[derive(Debug, Default)]
@@ -417,6 +420,34 @@ impl VM {
                             Value::Int(v) => self.stack.push((!v).into()),
                             Value::Bool(v) => self.stack.push((!v).into()),
                         }
+                    }
+                    VMInstruction::Pick(n) => {
+                        if self.stack.is_empty() {
+                            return Err(VMError::InvalidStackOffset);
+                        }
+
+                        let idx = self
+                            .stack
+                            .len()
+                            .checked_sub((n + 1) as usize)
+                            .ok_or(VMError::InvalidStackOffset)?;
+
+                        let r = self.stack.get(idx).ok_or(VMError::InvalidStackOffset)?;
+                        self.stack.push(r.clone());
+                    }
+                    VMInstruction::Move(n) => {
+                        if self.stack.is_empty() {
+                            return Err(VMError::InvalidStackOffset);
+                        }
+
+                        let idx = self
+                            .stack
+                            .len()
+                            .checked_sub((n + 1) as usize)
+                            .ok_or(VMError::InvalidStackOffset)?;
+
+                        let v = self.stack.remove(idx);
+                        self.stack.push(v);
                     }
                 };
                 self.pc += 1;

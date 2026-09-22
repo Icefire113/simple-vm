@@ -195,7 +195,7 @@ impl<'a> Parser<'a> {
                             Ok(VMInstruction::Jump(*i as u32))
                         }
                         None => Err(ParseError::UnexpectedEOF),
-                        _ => Err(IllegalToken(tok.clone(), self.pos)),
+                        Some(t) => Err(IllegalToken(t.clone(), self.pos)),
                     },
                     Keyword::JumpIfNotZero => match self.advance() {
                         Some(Token::Identifier(loc)) => match self.label_map.get(loc) {
@@ -213,7 +213,7 @@ impl<'a> Parser<'a> {
                             Ok(VMInstruction::JumpIfNotZero(*i as u32))
                         }
                         None => Err(ParseError::UnexpectedEOF),
-                        _ => Err(IllegalToken(tok.clone(), self.pos)),
+                        Some(t) => Err(IllegalToken(t.clone(), self.pos)),
                     },
                     Keyword::JumpIfZero => match self.advance() {
                         Some(Token::Identifier(loc)) => match self.label_map.get(loc) {
@@ -231,7 +231,7 @@ impl<'a> Parser<'a> {
                             Ok(VMInstruction::JumpIfZero(*i as u32))
                         }
                         None => Err(ParseError::UnexpectedEOF),
-                        _ => Err(IllegalToken(tok.clone(), self.pos)),
+                        Some(t) => Err(IllegalToken(t.clone(), self.pos)),
                     },
                     Keyword::JumpIfTrue => match self.advance() {
                         Some(Token::Identifier(loc)) => match self.label_map.get(loc) {
@@ -249,7 +249,7 @@ impl<'a> Parser<'a> {
                             Ok(VMInstruction::JumpIfTrue(*i as u32))
                         }
                         None => Err(ParseError::UnexpectedEOF),
-                        _ => Err(IllegalToken(tok.clone(), self.pos)),
+                        Some(t) => Err(IllegalToken(t.clone(), self.pos)),
                     },
                     Keyword::JumpIfFalse => match self.advance() {
                         Some(Token::Identifier(loc)) => match self.label_map.get(loc) {
@@ -267,7 +267,7 @@ impl<'a> Parser<'a> {
                             Ok(VMInstruction::JumpIfFalse(*i as u32))
                         }
                         None => Err(ParseError::UnexpectedEOF),
-                        _ => Err(IllegalToken(tok.clone(), self.pos)),
+                        Some(t) => Err(IllegalToken(t.clone(), self.pos)),
                     },
                     Keyword::DebugStack => Ok(VMInstruction::DebugStack),
                     Keyword::Exit => Ok(VMInstruction::Exit),
@@ -291,14 +291,43 @@ impl<'a> Parser<'a> {
                             }
                         }
                         None => Err(ParseError::UnexpectedEOF),
-                        _ => Err(IllegalToken(tok.clone(), self.pos)),
+                        Some(t) => Err(IllegalToken(t.clone(), self.pos)),
                     },
                     Keyword::Ret => Ok(VMInstruction::Return),
                     Keyword::BitAnd => Ok(VMInstruction::BitAnd),
                     Keyword::BitOr => Ok(VMInstruction::BitOr),
                     Keyword::BitXor => Ok(VMInstruction::BitXor),
                     Keyword::BitNot => Ok(VMInstruction::BitNot),
-                    _ => Err(ParseError::IllegalToken(tok.clone(), self.pos)),
+                    Keyword::Pick => match self.advance() {
+                        Some(Token::Literal(LiteralToken::Int(i))) => {
+                            if *i < 0 {
+                                return Err(IllegalToken(
+                                    Token::Literal(LiteralToken::Int(*i)),
+                                    self.pos,
+                                ));
+                            }
+                            Ok(VMInstruction::Pick(*i as u32))
+                        }
+                        None => Err(ParseError::UnexpectedEOF),
+                        Some(t) => Err(IllegalToken(t.clone(), self.pos)),
+                    },
+                    Keyword::Move => match self.advance() {
+                        Some(Token::Literal(LiteralToken::Int(i))) => {
+                            if *i < 0 {
+                                return Err(IllegalToken(
+                                    Token::Literal(LiteralToken::Int(*i)),
+                                    self.pos,
+                                ));
+                            }
+                            Ok(VMInstruction::Move(*i as u32))
+                        }
+                        None => Err(ParseError::UnexpectedEOF),
+                        Some(t) => Err(IllegalToken(t.clone(), self.pos)),
+                    },
+                    kw => Err(ParseError::IllegalToken(
+                        Token::Keyword(kw.clone()),
+                        self.pos,
+                    )),
                 },
                 _ => unreachable!(),
             },

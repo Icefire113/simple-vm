@@ -47,14 +47,24 @@ pub enum VMInstruction {
     RotR(u8),
 
     /// Pops values `a, b` from the stack and pushes their bitwise `and`
+    ///
+    /// Both operands must be the same type; ints are combined bitwise and bools logically,
+    /// mixed types raise an error
     BitAnd,
     /// Pops values `a, b` from the stack and pushes their bitwise `or`
+    ///
+    /// Both operands must be the same type; ints are combined bitwise and bools logically,
+    /// mixed types raise an error
     BitOr,
     /// Pops values `a, b` from the stack and pushes their bitwise `xor`
+    ///
+    /// Both operands must be the same type; ints are combined bitwise and bools logically,
+    /// mixed types raise an error
     BitXor,
     /// Pops a value `a` from the stack and pushes `!a`
+    ///
+    /// Ints are complemented bitwise and bools are negated logically
     BitNot,
-
 
     // Comparison stuffs
     /// Pops 2 values from the stack and pushes their equality (true or false)
@@ -91,6 +101,12 @@ pub enum VMInstruction {
     Dup,
     /// Push a 32bit signed integer immediate value onto the stack
     PushImm(Value),
+    /// Copies the nth item in the stack to the top, so if our stack is `[1,2,3]` and we `pick 1` we should end up with `[1,2,3,2]`
+    /// `pick 0` is the same as `dup`
+    /// `pick 2` would result in `[1,2,3,1]`
+    Pick(u32),
+    /// Same as `pick`, but moves the value instead of copying
+    Move(u32),
 
     // control flow stuffs
     /// Pops a value from the stack and sets the program counter to that value
