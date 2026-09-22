@@ -209,6 +209,10 @@ impl<'a> Tokenizer<'a> {
             "exit" => Token::Keyword(Keyword::Exit),
             "call" => Token::Keyword(Keyword::Call),
             "ret" => Token::Keyword(Keyword::Ret),
+            "or" => Token::Keyword(Keyword::BitOr),
+            "and" => Token::Keyword(Keyword::BitAnd),
+            "xor" => Token::Keyword(Keyword::BitXor),
+            "not" => Token::Keyword(Keyword::BitNot),
 
             "true" => Token::Keyword(Keyword::True),
             "false" => Token::Keyword(Keyword::False),

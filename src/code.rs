@@ -46,6 +46,16 @@ pub enum VMInstruction {
     /// The shift amount is taken modulo 32, e.g. a rotation of 33 behaves as a rotation of 1
     RotR(u8),
 
+    /// Pops values `a, b` from the stack and pushes their bitwise `and`
+    BitAnd,
+    /// Pops values `a, b` from the stack and pushes their bitwise `or`
+    BitOr,
+    /// Pops values `a, b` from the stack and pushes their bitwise `xor`
+    BitXor,
+    /// Pops a value `a` from the stack and pushes `!a`
+    BitNot,
+
+
     // Comparison stuffs
     /// Pops 2 values from the stack and pushes their equality (true or false)
     ///

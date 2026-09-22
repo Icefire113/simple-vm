@@ -30,19 +30,22 @@ fn main() -> anyhow::Result<()> {
 
 #[cfg(test)]
 mod tests {
+    use anyhow::Context;
+
     use crate::vm::Value;
 
-    fn run_code(asm: &str) -> Value {
+    fn run_code(asm: &str) -> anyhow::Result<Value> {
         use crate::assembler::{
             parser::Parser,
             tokenizer::{token::Token, tokenizer::Tokenizer},
         };
-        let tokens: Vec<Token> = Tokenizer::new(asm).tokenize().unwrap();
+        let tokens: Vec<Token> = Tokenizer::new(asm).tokenize().context("Tokenizing")?;
         let parser = Parser::new(&tokens);
-        let (instructions, main_addr) = parser.parse().unwrap();
+        let (instructions, main_addr) = parser.parse().context("parsing")?;
         let mut vm = crate::vm::VM::new();
         vm.load_program(instructions, main_addr);
-        vm.run().unwrap()
+        let r = vm.run().context("VM Run")?;
+        Ok(r)
     }
 
     #[test]
@@ -78,7 +81,7 @@ mod tests {
     jmp ret_2
 ";
 
-        let r = run_code(asm_test);
+        let r = run_code(asm_test).unwrap();
         assert_eq!(r, crate::vm::Value::Int(-25));
     }
 
@@ -93,7 +96,7 @@ mod tests {
     exit         # exits with 138
         ";
 
-        let r = run_code(asm_test);
+        let r = run_code(asm_test).unwrap();
         assert_eq!(r, crate::vm::Value::Int(138));
     }
 
@@ -136,7 +139,46 @@ mod tests {
     exit
 # Should exit with Value::Int(-25)
 ";
-        let r = run_code(test_asm);
+        let r = run_code(test_asm).unwrap();
         assert_eq!(r, crate::vm::Value::Int(-25));
+    }
+
+    #[test]
+    fn test_and() {
+        let test_asm = r"
+        :main
+            push 0xFF
+            push 0
+            and
+            exit
+        ";
+        let r = run_code(test_asm).unwrap();
+        assert_eq!(r, crate::vm::Value::Int(0));
+    }
+
+    #[test]
+    fn test_or() {
+        let test_asm = r"
+        :main
+            push 0x0F
+            push 0xF0
+            or
+            exit
+        ";
+        let r = run_code(test_asm).unwrap();
+        assert_eq!(r, crate::vm::Value::Int(0xFF));
+    }
+
+    #[test]
+    fn test_xor() {
+        let test_asm = r"
+        :main
+            push 0xFF
+            push 0xF0
+            xor
+            exit
+        ";
+        let r = run_code(test_asm).unwrap();
+        assert_eq!(r, crate::vm::Value::Int(0xF));
     }
 }

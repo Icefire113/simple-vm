@@ -82,6 +82,10 @@ pub enum Keyword {
     PushOverflowFlag,
     Call,
     Ret,
+    BitOr,
+    BitAnd,
+    BitXor,
+    BitNot,
 
     True,
     False,
@@ -130,6 +134,10 @@ impl Display for Keyword {
             Self::PushOverflowFlag => "push_overflow",
             Self::Call => "call",
             Self::Ret => "ret",
+            Self::BitOr => "or",
+            Self::BitAnd => "and",
+            Self::BitXor => "xor",
+            Self::BitNot => "not",
         };
         write!(f, "{s}")
     }

@@ -366,6 +366,58 @@ impl VM {
                         // skip pc increment
                         return Ok(None);
                     }
+                    VMInstruction::BitAnd => {
+                        let a = self.pop_checked()?;
+                        let b = self.pop_checked()?;
+                        match (a, b) {
+                            (Value::Int(a), Value::Int(b)) => {
+                                let r = a & b;
+                                self.stack.push(r.into());
+                            }
+                            (Value::Bool(a), Value::Bool(b)) => {
+                                let r = a & b;
+                                self.stack.push(r.into());
+                            }
+                            _ => return Err(VMError::MismatchedOperands),
+                        }
+                    }
+                    VMInstruction::BitOr => {
+                        let a = self.pop_checked()?;
+                        let b = self.pop_checked()?;
+                        match (a, b) {
+                            (Value::Int(a), Value::Int(b)) => {
+                                let r = a | b;
+                                self.stack.push(r.into());
+                            }
+                            (Value::Bool(a), Value::Bool(b)) => {
+                                let r = a | b;
+                                self.stack.push(r.into());
+                            }
+                            _ => return Err(VMError::MismatchedOperands),
+                        }
+                    }
+                    VMInstruction::BitXor => {
+                        let a = self.pop_checked()?;
+                        let b = self.pop_checked()?;
+                        match (a, b) {
+                            (Value::Int(a), Value::Int(b)) => {
+                                let r = a ^ b;
+                                self.stack.push(r.into());
+                            }
+                            (Value::Bool(a), Value::Bool(b)) => {
+                                let r = a ^ b;
+                                self.stack.push(r.into());
+                            }
+                            _ => return Err(VMError::MismatchedOperands),
+                        }
+                    }
+                    VMInstruction::BitNot => {
+                        let a = self.pop_checked()?;
+                        match a {
+                            Value::Int(v) => self.stack.push((!v).into()),
+                            Value::Bool(v) => self.stack.push((!v).into()),
+                        }
+                    }
                 };
                 self.pc += 1;
                 Ok(None)
