@@ -1,6 +1,7 @@
 use crate::vm::Value;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub enum VMInstruction {
     // Arithmetic stuffs
     /// Pops 2 values from the stack and pushes their sum, wrapping on overflow and setting ErrorFlags.overflow if it occurs
@@ -438,4 +439,26 @@ pub enum VMInstructionParseError {
 
     #[error("Invalid value")]
     InvalidValue,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use proptest::prelude::*;
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(4096))]
+        /// `as_bytes` and `try_from_bytes` must be exact inverses in both directions:
+        /// decoding must consume exactly the encoded bytes, reconstruct the original
+        /// instruction, and re-encode to identical bytes
+        #[test]
+        fn byte_roundtrip(inst in any::<VMInstruction>()) {
+            let bytes = inst.as_bytes();
+            let (decoded, size) = VMInstruction::try_from_bytes(&bytes).unwrap();
+
+            prop_assert_eq!(size as usize, bytes.len());
+            prop_assert_eq!(decoded, inst);
+            prop_assert_eq!(decoded.as_bytes(), bytes);
+        }
+    }
 }

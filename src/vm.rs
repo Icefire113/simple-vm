@@ -55,6 +55,7 @@ impl ErrorFlags {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub enum Value {
     Int(i32),
     Bool(bool),

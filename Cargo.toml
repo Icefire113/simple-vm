@@ -6,3 +6,7 @@ edition = "2024"
 [dependencies]
 anyhow = { version = "1.0.104", features = ["backtrace"] }
 thiserror = "2.0.20"
+
+[dev-dependencies]
+proptest = "1.11.0"
+proptest-derive = "0.8.0"
