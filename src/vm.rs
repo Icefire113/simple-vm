@@ -60,6 +60,44 @@ pub enum Value {
     Bool(bool),
 }
 
+impl Value {
+    /// Makes this value into a byte array
+    pub const fn as_bytes(&self) -> [u8; 5] {
+        match self {
+            Self::Int(n) => {
+                let v: [u8; 4] = n.to_le_bytes();
+                [0x01, v[0], v[1], v[2], v[3]]
+            }
+            Self::Bool(b) => [0x00, *b as u8, 0x00, 0x00, 0x00],
+        }
+    }
+
+    /// Tries to construct a new Value from bytes, fails if invalid format
+    pub const fn try_from_bytes(bytes: &[u8]) -> Option<Self> {
+        if bytes.len() != 5 {
+            return None;
+        }
+        match bytes[0] {
+            0x00 => {
+                if bytes[2] != 0 || bytes[3] != 0 || bytes[4] != 0 {
+                    None
+                } else if bytes[1] == 0 {
+                    Some(Self::Bool(false))
+                } else if bytes[1] == 1 {
+                    Some(Self::Bool(true))
+                } else {
+                    None
+                }
+            }
+            0x01 => {
+                let bytes = [bytes[1], bytes[2], bytes[3], bytes[4]];
+                Some(Self::Int(i32::from_le_bytes(bytes)))
+            }
+            _ => None,
+        }
+    }
+}
+
 impl PartialOrd for Value {
     /// Compares two values, only if both are integers
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
