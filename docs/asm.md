@@ -127,7 +127,25 @@ sticky until cleared (see [Error Flags and VM Control](#error-flags-and-vm-contr
 | `dup`     | `[a] → [a, a]`           | Duplicate top value                       |
 | `swap`    | `[a, b] → [b, a]`        | Swap top two values                       |
 | `pop`     | `[a, …] → […]`           | Discard top value                         |
+| `pick n`  | `[a, b, c] → [a, b, c, a]` (for n=2) | Copy the nth item from the top to the top; `pick 0` == `dup` |
+| `move n`  | `[a, b, c] → [b, c, a]` (for n=2)    | Like `pick`, but removes the source item |
 | `popjump` | `[addr] → []`            | Set pc to popped value (unchecked target) |
+
+`pick`/`move` count from the top: `n=0` is the top value, `n=1` the one below
+it, and so on. An offset past the bottom of the stack is a runtime error
+(`InvalidStackOffset`).
+
+### Bitwise
+
+Bitwise binary ops work on two ints (bitwise) or two bools (logical), pushing
+the result; mixed-type operands are an error.
+
+| Mnemonic | Stack            | Effect                                        |
+|----------|------------------|-----------------------------------------------|
+| `and`    | `[a, b] → [a&b]` | Bitwise and (logical for bools)               |
+| `or`     | `[a, b] → [a\|b]` | Bitwise or (logical for bools)                |
+| `xor`    | `[a, b] → [a^b]` | Bitwise xor (logical for bools)               |
+| `not`    | `[a] → [!a]`     | Bitwise complement (ints) / logical not (bools) |
 
 ### Arithmetic
 
@@ -159,6 +177,8 @@ Right shifts are arithmetic (sign-preserving).
 | `shr n`   | `[a] → [a>>n]`     | Arithmetic shift right              |
 | `rotl n`  | `[a] → [a rotl n]` | Rotate left, n mod 32               |
 | `rotr n`  | `[a] → [a rotr n]` | Rotate right, n mod 32              |
+
+Shift/rotate operate on ints only; bools are an error.
 
 ### Comparison
 
@@ -257,7 +277,6 @@ addu
 
 - `push true` / `push false`: the `true`/`false` keywords are tokenized but not
   yet accepted by the parser.
-- No memory (`load`/`store`), no bitwise logic ops (`and`/`or`/`xor`/`not`),
-  no `mod`.
+- No memory (`load`/`store`), no `mod`.
 - Jump targets can also be raw integer literals (`jmp 3`), which skips label
   safety entirely — useful for tests, footguns otherwise.
