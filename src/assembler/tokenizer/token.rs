@@ -88,6 +88,7 @@ pub enum Keyword {
     BitNot,
     Pick,
     Move,
+    Syscall,
 
     True,
     False,
@@ -128,7 +129,7 @@ impl Display for Keyword {
             Self::JumpIfTrue => "jt",
             Self::JumpIfFalse => "jf",
             Self::DebugStack => "dbg_stack",
-            Self::Exit => "start",
+            Self::Exit => "exit",
             Self::ClearEFlags => "clear_err",
             Self::ClearDivZero => "clear_div_zero",
             Self::ClearOverflow => "clear_overflow",
@@ -142,6 +143,7 @@ impl Display for Keyword {
             Self::BitNot => "not",
             Self::Pick => "pick",
             Self::Move => "move",
+            Self::Syscall => "syscall",
         };
         write!(f, "{s}")
     }

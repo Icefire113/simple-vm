@@ -34,6 +34,12 @@ pub enum VMError {
 
     #[error("Call stack limit exceeded")]
     CallStackLimitExceeded,
+
+    #[error("Unknown syscall")]
+    UnknownSyscall,
+
+    #[error("Halt")]
+    Halt,
 }
 
 #[derive(Debug, Default)]
@@ -513,6 +519,24 @@ impl VM {
 
                         let v = self.stack.remove(idx);
                         self.stack.push(v);
+                    }
+                    VMInstruction::Syscall(syscall_n) => {
+                        match syscall_n {
+                            // Print integer
+                            1 => {
+                                let v = self.pop_checked_int()?;
+                                println!("[VM OUT]: {v}");
+                            }
+                            // Print boolean
+                            2 => {
+                                let v = self.pop_checked_bool()?;
+                                println!("[VM OUT]: {v}");
+                            }
+                            _ => return Err(VMError::UnknownSyscall),
+                        }
+                    }
+                    VMInstruction::Halt => {
+                        return Err(VMError::Halt);
                     }
                 };
                 self.pc += 1;

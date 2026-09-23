@@ -215,6 +215,7 @@ impl<'a> Tokenizer<'a> {
             "not" => Token::Keyword(Keyword::BitNot),
             "pick" => Token::Keyword(Keyword::Pick),
             "move" => Token::Keyword(Keyword::Move),
+            "syscall" => Token::Keyword(Keyword::Syscall),
 
             "true" => Token::Keyword(Keyword::True),
             "false" => Token::Keyword(Keyword::False),

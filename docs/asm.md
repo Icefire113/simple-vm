@@ -139,13 +139,20 @@ it, and so on. An offset past the bottom of the stack is a runtime error
 
 Bitwise binary ops work on two ints (bitwise) or two bools (logical), pushing
 the result; mixed-type operands are an error.
+Shift/rotate take the value from the stack; the **amount is an immediate
+operand**. Amounts >= 32 are errors for shifts; rotate amounts wrap modulo 32.
+Right shifts are arithmetic (sign-preserving).
 
-| Mnemonic | Stack            | Effect                                        |
-|----------|------------------|-----------------------------------------------|
-| `and`    | `[a, b] → [a&b]` | Bitwise and (logical for bools)               |
-| `or`     | `[a, b] → [a\|b]` | Bitwise or (logical for bools)                |
-| `xor`    | `[a, b] → [a^b]` | Bitwise xor (logical for bools)               |
-| `not`    | `[a] → [!a]`     | Bitwise complement (ints) / logical not (bools) |
+| Mnemonic | Stack               | Effect                                          |
+|----------|---------------------|-------------------------------------------------|
+| `and`    | `[a, b] → [a&b]`    | Bitwise and (logical for bools)                 |
+| `or`     | `[a, b] → [a\|b]`   | Bitwise or (logical for bools)                  |
+| `xor`    | `[a, b] → [a^b]`    | Bitwise xor (logical for bools)                 |
+| `not`    | `[a] → [!a]`        | Bitwise complement (ints) / logical not (bools) |
+| `shl n`  | `[a] → [a<<n]`      | Shift left by immediate n (0..=31)              |
+| `shr n`  | `[a] → [a>>n]`      | Arithmetic shift right                          |
+| `rotl n` | `[a] → [a rotl n]`  | Rotate left, n mod 32                           |
+| `rotr n` | `[a] → [a rotr n]`  | Rotate right, n mod 32                          |
 
 ### Arithmetic
 
@@ -164,19 +171,6 @@ Binary ops pop the top two values and push the result. For `op a b` forms the
 | `divc`   | `[a, b] → [a/b]` | Divide (`a / b`, truncating), `b = 0` → error + flag |
 | `negu`   | `[a] → [-a]`     | Negate, wraps (`i32::MIN` → itself), sets flag       |
 | `negc`   | `[a] → [-a]`     | Negate, asserts no overflow                          |
-
-### Bitwise
-
-Shift/rotate take the value from the stack; the **amount is an immediate
-operand**. Amounts >= 32 are errors for shifts; rotate amounts wrap modulo 32.
-Right shifts are arithmetic (sign-preserving).
-
-| Mnemonic  | Stack              | Effect                              |
-|-----------|--------------------|-------------------------------------|
-| `shl n`   | `[a] → [a<<n]`     | Shift left by immediate n (0..=31)  |
-| `shr n`   | `[a] → [a>>n]`     | Arithmetic shift right              |
-| `rotl n`  | `[a] → [a rotl n]` | Rotate left, n mod 32               |
-| `rotr n`  | `[a] → [a rotr n]` | Rotate right, n mod 32              |
 
 Shift/rotate operate on ints only; bools are an error.
 
@@ -260,6 +254,19 @@ below or by loading a new program.
 | `push_div_zero`     | `[] → [b]`   | Push division-by-zero flag as bool     |
 | `push_overflow`     | `[] → [b]`   | Push overflow flag as bool             |
 | `dbg_stack`         | —            | Print pc + stack to stderr (debug aid) |
+| `halt`              | —            | Extra stop instruction — raises a `Halt` error; normal termination is via `exit` |
+
+### Syscalls
+
+`syscall n` takes a syscall number as its immediate operand and performs a
+host-provided service. Popping is checked: an empty stack (or a value of the
+wrong type) is a runtime error. An unknown syscall number raises
+`UnknownSyscall` and halts the VM.
+
+| Mnemonic    | Stack              | Effect                                        |
+|-------------|--------------------|-----------------------------------------------|
+| `syscall 1` | `[i, …] → […]`     | Print the top int to stdout as `[VM OUT]: i`  |
+| `syscall 2` | `[b, …] → […]`     | Print the top bool to stdout as `[VM OUT]: b` |
 
 ## Idioms
 
@@ -271,6 +278,9 @@ jz is_zero
 # decrement top of stack (note operand order: subu computes b - a)
 push -1
 addu
+
+# print the int on top of the stack
+syscall 1
 ```
 
 ## Known gaps

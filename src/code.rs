@@ -149,10 +149,14 @@ pub enum VMInstruction {
     Return,
 
     // VM control stuffs
+    /// Syscall interface
+    Syscall(u32),
     /// Debug instruction, prints the current state of the stack to stderr
     DebugStack,
     /// Pops a value from the stack and treats that value as the VM's "exit code"
     Exit,
+    /// Halts the VM
+    Halt,
     /// Clears all the error flags
     ClearErrorFlags,
     /// Clears the division by zero error flag
@@ -219,7 +223,9 @@ impl VMInstruction {
             Self::PushOverflowFlag => [0x20, 0x04, 0, 0],
             // system
             Self::Exit => [0xFF, 0x00, 0, 0],
+            Self::Halt => [0xFF, 0x00, 0x01, 0],
             Self::DebugStack => [0xFF, 0x01, 0, 0],
+            Self::Syscall(_) => [0xFF, 0xFE, 0, 0],
         }
     }
 
@@ -245,6 +251,7 @@ impl VMInstruction {
             Self::JumpIfTrue(a) => v.extend(a.to_le_bytes()),
             Self::JumpIfFalse(a) => v.extend(a.to_le_bytes()),
             Self::Call(a) => v.extend(a.to_le_bytes()),
+            Self::Syscall(n) => v.extend(n.to_le_bytes()),
             // everything else does not have any arguments
             _ => {}
         };
@@ -423,7 +430,20 @@ impl VMInstruction {
             [0x20, 0x03, 0, 0] => Ok((Self::PushDivisionByZeroFlag, 4)),
             [0x20, 0x04, 0, 0] => Ok((Self::PushOverflowFlag, 4)),
             [0xFF, 0x00, 0, 0] => Ok((Self::Exit, 4)),
+            [0xFF, 0x00, 0x01, 0] => Ok((Self::Halt, 4)),
             [0xFF, 0x01, 0, 0] => Ok((Self::DebugStack, 4)),
+            [0xFF, 0xFE, 0, 0] => {
+                if bytes.len() < 8 {
+                    Err(VMInstructionParseError::TooShort)
+                } else {
+                    Ok((
+                        Self::Syscall(u32::from_le_bytes(
+                            bytes[4..8].try_into().expect("Internal error"),
+                        )),
+                        8,
+                    ))
+                }
+            }
             _ => Err(VMInstructionParseError::InvalidOpcode),
         }
     }

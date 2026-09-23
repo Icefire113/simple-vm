@@ -324,6 +324,19 @@ impl<'a> Parser<'a> {
                         None => Err(ParseError::UnexpectedEOF),
                         Some(t) => Err(IllegalToken(t.clone(), self.pos)),
                     },
+                    Keyword::Syscall => match self.advance() {
+                        Some(Token::Literal(LiteralToken::Int(i))) => {
+                            if *i < 0 {
+                                return Err(IllegalToken(
+                                    Token::Literal(LiteralToken::Int(*i)),
+                                    self.pos,
+                                ));
+                            }
+                            Ok(VMInstruction::Syscall(*i as u32))
+                        }
+                        None => Err(ParseError::UnexpectedEOF),
+                        Some(t) => Err(IllegalToken(t.clone(), self.pos)),
+                    },
                     kw => Err(ParseError::IllegalToken(
                         Token::Keyword(kw.clone()),
                         self.pos,
