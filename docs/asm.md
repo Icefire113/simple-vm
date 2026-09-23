@@ -172,6 +172,17 @@ Binary ops pop the top two values and push the result. For `op a b` forms the
 | `negu`   | `[a] → [-a]`     | Negate, wraps (`i32::MIN` → itself), sets flag       |
 | `negc`   | `[a] → [-a]`     | Negate, asserts no overflow                          |
 
+FMA pops three ints: given stack `[a, b, c]` (c on top), `fmau`/`fmac` push
+`b * c + a`. The multiply is fused into the add — overflow at *either* step
+counts. When the multiply wraps in `fmau`, the *wrapped* product is fed into
+the add (which may set the flag again), so the result is not the true low 32
+bits of `b * c + a`.
+
+| Mnemonic | Stack                    | Effect                                        |
+|----------|--------------------------|-----------------------------------------------|
+| `fmau`   | `[a, b, c] → [b*c + a]`  | Fused multiply-add, wraps, sets flag          |
+| `fmac`   | `[a, b, c] → [b*c + a]`  | Fused multiply-add, asserts no overflow       |
+
 Shift/rotate operate on ints only; bools are an error.
 
 ### Comparison

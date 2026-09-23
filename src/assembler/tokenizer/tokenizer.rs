@@ -216,6 +216,8 @@ impl<'a> Tokenizer<'a> {
             "pick" => Token::Keyword(Keyword::Pick),
             "move" => Token::Keyword(Keyword::Move),
             "syscall" => Token::Keyword(Keyword::Syscall),
+            "fmac" => Token::Keyword(Keyword::Fmac),
+            "fmau" => Token::Keyword(Keyword::Fmau),
 
             "true" => Token::Keyword(Keyword::True),
             "false" => Token::Keyword(Keyword::False),

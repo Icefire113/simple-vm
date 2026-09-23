@@ -337,6 +337,8 @@ impl<'a> Parser<'a> {
                         None => Err(ParseError::UnexpectedEOF),
                         Some(t) => Err(IllegalToken(t.clone(), self.pos)),
                     },
+                    Keyword::Fmac => Ok(VMInstruction::FmaChecked),
+                    Keyword::Fmau => Ok(VMInstruction::FmaUnchecked),
                     kw => Err(ParseError::IllegalToken(
                         Token::Keyword(kw.clone()),
                         self.pos,

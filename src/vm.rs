@@ -538,6 +538,40 @@ impl VM {
                     VMInstruction::Halt => {
                         return Err(VMError::Halt);
                     }
+                    VMInstruction::FmaChecked => {
+                        let a = self.pop_checked_int()?;
+                        let b = self.pop_checked_int()?;
+                        let c = self.pop_checked_int()?;
+                        match a.overflowing_mul(b) {
+                            (r, false) => match r.overflowing_add(c) {
+                                (r, false) => {
+                                    self.stack.push(r.into());
+                                }
+                                (_, true) => {
+                                    self.error_flags.overflow = true;
+                                    return Err(VMError::Overflow);
+                                }
+                            },
+                            (_, true) => {
+                                self.error_flags.overflow = true;
+                                return Err(VMError::Overflow);
+                            }
+                        }
+                    }
+                    VMInstruction::FmaUnchecked => {
+                        let a = self.pop_checked_int()?;
+                        let b = self.pop_checked_int()?;
+                        let c = self.pop_checked_int()?;
+                        let (a_times_b, overflowed) = a.overflowing_mul(b);
+                        if overflowed {
+                            self.error_flags.overflow = true;
+                        }
+                        let (r, overflowed) = a_times_b.overflowing_add(c);
+                        if overflowed {
+                            self.error_flags.overflow = true;
+                        }
+                        self.stack.push(r.into());
+                    }
                 };
                 self.pc += 1;
                 Ok(None)

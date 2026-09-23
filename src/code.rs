@@ -34,6 +34,19 @@ pub enum VMInstruction {
     ///
     /// Note that this only applies to integer values, booleans will raise an error
     NegChecked,
+
+    /// Fused multiply and add: pops 3 values and pushes their fused product-plus-sum, acting as a runtime assert; raises an error and sets ErrorFlags.overflow if it overflows (at either step)
+    ///
+    /// Given stack: [a, b, c], pushes [(b * c) + a]
+    FmaChecked,
+    /// Fused multiply and add: pops 3 values and pushes their fused product-plus-sum, wrapping on overflow and setting ErrorFlags.overflow if it occurs (at either step)
+    ///
+    /// Note that when the multiply wraps, the *wrapped* product is fed into the add
+    /// (which may set the flag again), so the result is not the true low 32 bits of `b * c + a`
+    ///
+    /// Given stack: [a, b, c], pushes [(b * c) + a]
+    FmaUnchecked,
+
     /// Pops a value from the stack and shifts it left by the given amount, then pushes the result
     ///
     /// Note that this only applies to integer values, booleans will raise an error.
@@ -183,6 +196,8 @@ impl VMInstruction {
             Self::DivChecked => [0x10, 0x14, 0, 0],
             Self::NegUnchecked => [0x10, 0x05, 0, 0],
             Self::NegChecked => [0x10, 0x15, 0, 0],
+            Self::FmaChecked => [0x10, 0x1F, 0x00, 0],
+            Self::FmaUnchecked => [0x10, 0x0F, 0x01, 0],
             // bit twiddling
             Self::ShiftL(_) => [0x03, 0x00, 0, 0],
             Self::ShiftR(_) => [0x03, 0x01, 0, 0],
@@ -275,6 +290,8 @@ impl VMInstruction {
             [0x10, 0x14, 0, 0] => Ok((Self::DivChecked, 4)),
             [0x10, 0x05, 0, 0] => Ok((Self::NegUnchecked, 4)),
             [0x10, 0x15, 0, 0] => Ok((Self::NegChecked, 4)),
+            [0x10, 0x1F, 0x00, 0] => Ok((Self::FmaChecked, 4)),
+            [0x10, 0x0F, 0x01, 0] => Ok((Self::FmaUnchecked, 4)),
             [0x03, 0x00, 0, 0] => {
                 if bytes.len() < 5 {
                     Err(VMInstructionParseError::TooShort)

@@ -89,6 +89,8 @@ pub enum Keyword {
     Pick,
     Move,
     Syscall,
+    Fmac,
+    Fmau,
 
     True,
     False,
@@ -144,6 +146,8 @@ impl Display for Keyword {
             Self::Pick => "pick",
             Self::Move => "move",
             Self::Syscall => "syscall",
+            Self::Fmac => "fmac",
+            Self::Fmau => "fmau",
         };
         write!(f, "{s}")
     }
