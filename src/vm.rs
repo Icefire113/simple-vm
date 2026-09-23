@@ -600,11 +600,11 @@ impl VM {
 
     /// Runs the virtual machine until the program exits or an error occurs
     pub fn run(&mut self) -> Result<Value, VMError> {
-        let mut result: Option<Value> = self.single_step()?;
-        while result.is_none() {
-            result = self.single_step()?;
+        loop {
+            match self.single_step()? {
+                Some(r) => return Ok(r),
+                None => (),
+            }
         }
-
-        Ok(result.unwrap())
     }
 }
