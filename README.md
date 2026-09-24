@@ -13,9 +13,6 @@ cargo run --bin sasm -- samples/fib.sasm out.svm
 cargo run --bin svm  -- out.svm
 ```
 
-Note: `sasm` uses `create_new(true)`, so the output file must not already
-exist — delete the `.svm` between runs.
-
 ## SASM in a nutshell
 
 - Stack machine: instructions push/pop 32-bit integers and booleans
