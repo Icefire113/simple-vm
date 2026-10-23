@@ -91,6 +91,7 @@ pub enum Keyword {
     Syscall,
     Fmac,
     Fmau,
+    Halt,
 
     True,
     False,
@@ -148,6 +149,7 @@ impl Display for Keyword {
             Self::Syscall => "syscall",
             Self::Fmac => "fmac",
             Self::Fmau => "fmau",
+            Self::Halt => "halt",
         };
         write!(f, "{s}")
     }

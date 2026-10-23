@@ -339,6 +339,7 @@ impl<'a> Parser<'a> {
                     },
                     Keyword::Fmac => Ok(VMInstruction::FmaChecked),
                     Keyword::Fmau => Ok(VMInstruction::FmaUnchecked),
+                    Keyword::Halt => Ok(VMInstruction::Halt),
                     kw => Err(ParseError::IllegalToken(
                         Token::Keyword(kw.clone()),
                         self.pos,

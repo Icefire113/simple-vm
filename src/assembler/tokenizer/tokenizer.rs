@@ -218,6 +218,7 @@ impl<'a> Tokenizer<'a> {
             "syscall" => Token::Keyword(Keyword::Syscall),
             "fmac" => Token::Keyword(Keyword::Fmac),
             "fmau" => Token::Keyword(Keyword::Fmau),
+            "halt" => Token::Keyword(Keyword::Halt),
 
             "true" => Token::Keyword(Keyword::True),
             "false" => Token::Keyword(Keyword::False),
