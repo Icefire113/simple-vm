@@ -1,0 +1,78 @@
+# crc32.sasm
+# CRC-32 (IEEE 802.3, reflected, polynomial 0xEDB88320) of a 32-bit integer.
+#
+# The value is fed in as four bytes, least-significant byte first (i.e. the
+# integer's 32 bits are processed LSB to MSB), which is the usual CRC-32 of a
+# little-endian 32-bit word.
+#
+# To use it, change the `push <imm>` at :main.
+
+# crc32
+#   in:  [data]                 (data on top of stack)
+#   out: [crc]
+:crc32
+    # set up the loop invariant [data, count, crc] with crc on top
+    push 0xFFFFFFFF             # crc = 0xFFFFFFFF
+    push 32                     # process all 32 bits
+    swap                        # [data, 32, crc]
+
+:bit_loop
+    # test = (crc ^ data) & 1  (the reflected CRC condition)
+    dup                         # [data, count, crc, crc]
+    push 1
+    and                         # [data, count, crc, crc & 1]
+    pick 3                      # [data, count, crc, crc & 1, data]
+    push 1
+    and                         # [data, count, crc, crc & 1, data & 1]
+    xor                         # [data, count, crc, test]
+    jz crc_shift_only           # pops test
+
+    # test != 0: crc = (crc >> 1) ^ 0xEDB88320
+    # `shr` is arithmetic, so mask off the sign-extension bit.
+    shr 1
+    push 0x7FFFFFFF
+    and
+    push 0xEDB88320
+    xor                         # [data, count, crc']
+    jmp crc_done
+
+:crc_shift_only
+    # test == 0: crc = crc >> 1
+    shr 1
+    push 0x7FFFFFFF
+    and                         # [data, count, crc']
+
+:crc_done
+    # data >>= 1 (arithmetic is fine: we only ever read the LSB)
+    move 2                      # [count, crc, data]
+    shr 1
+    move 2                      # [crc, data', count]
+    move 2                      # [data', count, crc]
+
+    # count -= 1
+    move 1                      # [data, crc, count]
+    push -1
+    addu                        # [data, crc, count - 1]
+    swap                        # [data, count - 1, crc]
+
+    # repeat while count != 0
+    pick 1                      # [data, count, crc, count]
+    jnz bit_loop                # pops the copy
+
+    # clean up [data, 0, crc] -> [crc]
+    swap
+    pop
+    swap
+    pop
+
+    # final xor with 0xFFFFFFFF
+    push 0xFFFFFFFF
+    xor
+    ret
+
+:main
+    push 0x12345678             # <-- input value
+    call crc32
+    syscall 1                   # print the resulting CRC-32
+    push 0
+    exit
