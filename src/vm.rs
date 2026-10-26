@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::code::VMInstruction;
 
 #[derive(Debug, thiserror::Error)]
@@ -65,6 +67,15 @@ impl ErrorFlags {
 pub enum Value {
     Int(i32),
     Bool(bool),
+}
+
+impl Display for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Int(n) => write!(f, "{}", n),
+            Self::Bool(n) => write!(f, "{}", n),
+        }
+    }
 }
 
 impl Value {

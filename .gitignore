@@ -2,3 +2,7 @@
 
 # Compiled programs
 *.svm
+
+# Graphviz
+*.svg
+*.dot
